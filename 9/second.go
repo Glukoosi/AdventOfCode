@@ -1,0 +1,120 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	file, err := os.Open("input.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Scan()
+
+	var program [999999999]int
+	for i, n := range strings.Split(scanner.Text(), ",") {
+		number, err := strconv.Atoi(n)
+		if err != nil {
+			log.Fatal(err)
+		}
+		program[i] = number
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	var n int
+	var relBase int
+
+	for {
+		instruction := program[n]
+		opcode := instruction % 100
+
+		if opcode == 99 {
+			break
+		}
+
+		var params [3]int
+
+		instruction /= 100
+		for i := 0; i <= 2; i++ {
+			if instruction%10 == 0 {
+				params[i] = program[n+i+1]
+			} else if instruction%10 == 1 {
+				params[i] = n + i + 1
+			} else if instruction%10 == 2 {
+				params[i] = program[n+i+1] + relBase
+			}
+			instruction /= 10
+		}
+
+		if opcode == 1 {
+			program[params[2]] = program[params[0]] + program[params[1]]
+			n += 4
+		} else if opcode == 2 {
+			program[params[2]] = program[params[0]] * program[params[1]]
+			n += 4
+		} else if opcode == 3 {
+			number, err := strconv.Atoi(input("Input: "))
+			if err != nil {
+				log.Fatal(err)
+			}
+			program[params[0]] = number
+			n += 2
+		} else if opcode == 4 {
+			fmt.Println(program[params[0]])
+			n += 2
+		} else if opcode == 5 {
+			if program[params[0]] != 0 {
+				n = program[params[1]]
+			} else {
+				n += 3
+			}
+		} else if opcode == 6 {
+			if program[params[0]] == 0 {
+				n = program[params[1]]
+			} else {
+				n += 3
+			}
+		} else if opcode == 7 {
+			if program[params[0]] < program[params[1]] {
+				program[params[2]] = 1
+			} else {
+				program[params[2]] = 0
+			}
+			n += 4
+		} else if opcode == 8 {
+			if program[params[0]] == program[params[1]] {
+				program[params[2]] = 1
+			} else {
+				program[params[2]] = 0
+			}
+			n += 4
+		} else if opcode == 9 {
+			relBase += program[params[0]]
+			n += 2
+		}
+	}
+
+}
+
+func input(inputPrint string) string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print(inputPrint)
+	text, err := reader.ReadString('\n')
+	if err != nil {
+		log.Fatal(err)
+	}
+	text = strings.TrimSuffix(text, "\n")
+	return text
+
+}
